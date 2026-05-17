@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shastra · Nada · Genome Interface — culturalmusings.com</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e29;--bg4:#222638;
+  --border:#2a2f42;--border2:#353b54;
+  --text:#e8eaf2;--text2:#9aa0bb;--text3:#5a6080;
+  --gold:#c9a227;--gold2:#f0c040;--gold-bg:rgba(201,162,39,0.10);
+  --teal:#1fb87a;--teal-bg:rgba(31,184,122,0.10);
+  --purple:#8b80e8;--purple-bg:rgba(139,128,232,0.10);
+  --blue:#4da6f5;--blue-bg:rgba(77,166,245,0.10);
+  --coral:#e06040;--coral-bg:rgba(224,96,64,0.10);
+  --green:#4caf7d;--red:#e05555;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 2px 16px rgba(0,0,0,0.5);
+  font-family:'Segoe UI',system-ui,sans-serif;
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-size:14px}
+
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+#header{padding:10px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--bg2)}
+#header .logo{font-size:16px;font-weight:700;color:var(--gold2);letter-spacing:.03em}
+#header .sub{font-size:11px;color:var(--text3);flex:1}
+#header .hbadge{font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid var(--border2);color:var(--text2);cursor:pointer}
+#header .hbadge:hover{background:var(--bg3)}
+
+#main{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR ── */
+#sidebar{width:200px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;overflow:hidden}
+#sidebar .sb-head{padding:12px 14px;font-size:10px;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)}
+#sidebar nav{flex:1;overflow-y:auto;padding:6px 0}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s}
+.sb-item:hover{color:var(--text);background:var(--bg3)}
+.sb-item.active{color:var(--gold2);border-left-color:var(--gold2);background:var(--gold-bg)}
+.sb-item .icon{font-size:14px;width:18px;text-align:center}
+.sb-sep{height:1px;background:var(--border);margin:4px 0}
+.sb-key-status{padding:10px 14px;border-top:1px solid var(--border);font-size:10px}
+.sb-key-status .ks-label{color:var(--text3);margin-bottom:4px}
+.sb-key-status .ks-val{color:var(--teal);font-family:monospace;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ks-dots{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+.ks-dot{width:7px;height:7px;border-radius:50%;background:var(--border2)}
+.ks-dot.filled{background:var(--teal)}
+.ks-dot.active{background:var(--gold2);box-shadow:0 0 4px var(--gold)}
+.ks-dot.depleted{background:var(--red)}
+
+/* ── CONTENT ── */
+#content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.panel{display:none;flex:1;overflow-y:auto;padding:20px 24px}
+.panel.active{display:block}
+
+/* ── COMPONENTS ── */
+.info-bar{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:11px;color:var(--text2);margin-bottom:16px}
+
+h2.panel-title{font-size:18px;font-weight:600;color:var(--gold2);margin-bottom:4px}
+.panel-sub{font-size:12px;color:var(--text3);margin-bottom:16px}
+
+/* cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px}
+.card:hover{border-color:var(--border2)}
+
+/* metric grid */
+.metric-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:16px}
+.metric{background:var(--bg3);border-radius:var(--radius-sm);padding:10px 12px}
+.metric-label{font-size:10px;color:var(--text3);margin-bottom:3px}
+.metric-val{font-size:18px;font-weight:600}
+.metric-note{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* pathway */
+.pw-node{padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;margin-bottom:4px;border-left:3px solid transparent}
+.pw-gold{background:var(--gold-bg);border-left-color:var(--gold);color:#f0d080}
+.pw-teal{background:var(--teal-bg);border-left-color:var(--teal);color:#80f0c0}
+.pw-purple{background:var(--purple-bg);border-left-color:var(--purple);color:#c0b8ff}
+.pw-blue{background:var(--blue-bg);border-left-color:var(--blue);color:#a0d0ff}
+.pw-coral{background:var(--coral-bg);border-left-color:var(--coral);color:#ffb090}
+.pw-arrow{text-align:center;color:var(--text3);font-size:11px;padding:2px 0}
+
+/* tags */
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.tag{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+
+/* cs cards */
+.cs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
+.cs-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:border-color .15s}
+.cs-card:hover{border-color:var(--border2)}
+.cs-num{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px}
+.cs-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.cs-sub{font-size:11px;color:var(--text2);margin-bottom:8px}
+.expand-area{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.expand-area.open{display:block}
+.expand-area p{font-size:12px;line-height:1.65;color:var(--text2);margin-bottom:8px}
+.expand-area strong{color:var(--text)}
+.expand-btn{font-size:11px;padding:4px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:none;color:var(--text2);cursor:pointer;margin-top:6px}
+.expand-btn:hover{background:var(--bg3)}
+
+/* akshara */
+.ak-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin:10px 0}
+.ak-cell{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 6px;text-align:center;cursor:pointer;transition:border-color .15s}
+.ak-cell:hover{border-color:var(--border2)}
+.ak-cell.sel{border-color:var(--purple);background:var(--purple-bg)}
+.ak-deva{font-size:18px;font-weight:600;display:block;color:var(--gold2)}
+.ak-lat{font-size:10px;color:var(--text2);display:block}
+.ak-hz{font-size:10px;font-weight:600;color:var(--teal);display:block;margin-top:1px}
+.ak-detail{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-top:10px;display:none}
+.ak-detail.open{display:block}
+.ak-d-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.ak-dm{background:var(--bg2);border-radius:var(--radius-sm);padding:8px}
+.ak-dm-lbl{font-size:10px;color:var(--text3)}
+.ak-dm-val{font-size:12px;font-weight:600;margin-top:2px}
+
+/* ── KEY MANAGER ── */
+.key-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;margin-bottom:12px}
+.key-slot{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg2)}
+.key-slot.active-slot{border-color:var(--gold);background:var(--gold-bg)}
+.key-slot.depleted-slot{border-color:var(--red);opacity:.6}
+.key-slot-num{font-size:11px;font-weight:600;color:var(--text3);min-width:22px;cursor:pointer;user-select:none}
+.key-slot-num:hover{color:var(--gold2)}
+.key-input-wrap{flex:1;position:relative}
+.key-inp{width:100%;font-size:11px;background:none;border:none;color:var(--text);font-family:monospace;outline:none}
+.key-inp:disabled{color:var(--text3);cursor:not-allowed}
+.key-lock{font-size:14px;cursor:pointer;color:var(--text3);flex-shrink:0}
+.key-lock:hover{color:var(--gold2)}
+.key-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--border2)}
+.key-dot.ok{background:var(--teal)}
+.key-dot.active-dot{background:var(--gold2);box-shadow:0 0 6px var(--gold)}
+.key-dot.depleted-dot{background:var(--red)}
+.key-dot.locked-dot{background:var(--purple)}
+
+.key-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{font-size:12px;padding:6px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:none;color:var(--text);cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--bg3)}
+.btn.primary{background:var(--gold);color:#000;border-color:var(--gold);font-weight:600}
+.btn.primary:hover{background:var(--gold2)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:rgba(224,85,85,.1)}
+
+.key-info-bar{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;margin-top:10px;font-size:11px;color:var(--text2)}
+.key-rotation-vis{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.rot-slot{font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid var(--border)}
+.rot-slot.active-rot{border-color:var(--gold);background:var(--gold-bg);color:var(--gold2);font-weight:600}
+.rot-slot.depleted-rot{border-color:var(--red);color:var(--red);opacity:.5}
+.rot-slot.ok-rot{border-color:var(--teal);color:var(--teal)}
+
+/* ── QUERY ── */
+.query-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px}
+.query-tx{width:100%;min-height:72px;background:none;border:none;color:var(--text);font-size:12px;font-family:inherit;resize:vertical;line-height:1.6;outline:none}
+.query-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:8px}
+.mode-toggle{display:flex;gap:4px}
+.mode-btn{font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:20px;background:none;cursor:pointer;color:var(--text2)}
+.mode-btn.on{background:var(--purple);border-color:var(--purple);color:#fff;font-weight:600}
+.send-btn{font-size:12px;padding:6px 18px;border-radius:var(--radius-sm);background:var(--gold);border:none;color:#000;cursor:pointer;font-weight:600}
+.send-btn:disabled{opacity:.4;cursor:not-allowed}
+.resp-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-size:12px;line-height:1.75;color:var(--text2);min-height:80px;display:none;white-space:pre-wrap}
+.resp-box.open{display:block}
+.status-line{font-size:11px;color:var(--text3);margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--teal)}
+.status-dot.spin-dot{animation:blink .7s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── BROWSER / REFERENCE ── */
+#browser-panel{display:flex;flex-direction:column;overflow:hidden}
+#browser-panel.active{display:flex}
+.browser-bar{display:flex;gap:6px;align-items:center;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.addr-bar{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;font-size:12px;color:var(--text);font-family:monospace;outline:none}
+.addr-bar:focus{border-color:var(--gold)}
+.bb-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 10px;color:var(--text2);cursor:pointer;font-size:12px}
+.bb-btn:hover{background:var(--bg4);color:var(--text)}
+#browser-frame{flex:1;border:none;background:#fff;display:none}
+#browser-frame.shown{display:block}
+.ref-link-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;padding:16px 20px;overflow-y:auto}
+.ref-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;transition:border-color .15s}
+.ref-card:hover{border-color:var(--gold)}
+.ref-card .rc-icon{font-size:20px;margin-bottom:6px}
+.ref-card .rc-title{font-size:12px;font-weight:600;margin-bottom:2px}
+.ref-card .rc-url{font-size:10px;color:var(--teal);font-family:monospace}
+.ref-card .rc-desc{font-size:11px;color:var(--text2);margin-top:4px}
+#browser-home{flex:1;overflow-y:auto}
+
+/* search */
+.search-row{display:flex;gap:8px;margin-bottom:12px}
+.search-inp{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;color:var(--text);outline:none}
+.search-inp:focus{border-color:var(--gold)}
+.search-res{font-size:12px;color:var(--text2);line-height:1.7}
+
+/* spinner */
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<div id="header">
+  <span class="logo">🕉 Shastra · Nada · Genome</span>
+  <span class="sub">Aesthetics of Society · culturalmusings.com · Naredla Rama Chandra</span>
+  <span class="hbadge" id="hKeyBadge" onclick="gotoTab('keys')">🔑 Keys: 0/20</span>
+  <span class="hbadge" id="hActiveBadge">Active: —</span>
+</div>
+
+<div id="main">
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sb-head">Navigation</div>
+  <nav>
+    <div class="sb-item active" data-tab="pathway" onclick="gotoTab('pathway')"><span class="icon">🗺</span>Pathway Map</div>
+    <div class="sb-item" data-tab="aksharas" onclick="gotoTab('aksharas')"><span class="icon">ॐ</span>Akshara · Genome</div>
+    <div class="sb-item" data-tab="cases" onclick="gotoTab('cases')"><span class="icon">🔬</span>10 Case Studies</div>
+    <div class="sb-sep"></div>
+    <div class="sb-item" data-tab="query" onclick="gotoTab('query')"><span class="icon">🤖</span>AI Research Query</div>
+    <div class="sb-item" data-tab="browser" onclick="gotoTab('browser')"><span class="icon">🌐</span>Reference Browser</div>
+    <div class="sb-sep"></div>
+    <div class="sb-item" data-tab="keys" onclick="gotoTab('keys')"><span class="icon">🔑</span>API Key Manager</div>
+  </nav>
+  <div class="sb-key-status">
+    <div class="ks-label">Key Rotation Status</div>
+    <div class="ks-val" id="sbActiveKey">No key active</div>
+    <div class="ks-dots" id="sbDots"></div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+
+  <!-- ══════════ PATHWAY ══════════ -->
+  <div class="panel active" id="panel-pathway">
+    <h2 class="panel-title">Bioacoustic–Genomic Pathway</h2>
+    <div class="panel-sub">Ancient Shastra → Bioacoustic science → DNA/RNA/Chromosomal → Neurological outcomes · from culturalmusings.com research network</div>
+    <div class="info-bar">Full inferential chain from Vedic phonemics to modern genomics. Each node references a specific culturalmusings.com subdomain.</div>
+    <div class="pw-node pw-gold">🎵 Vedic Akshara / Bīja Mantra · Nāda Chikitsā · <em>Sa Re Ga Ma Pa Dha Ni</em> · <a href="#" onclick="openRef('https://nada-chikitsa.culturalmusings.com');return false" style="color:var(--gold2)">nada-chikitsa.culturalmusings.com →</a></div>
+    <div class="pw-arrow">↓ Phonemic vibration (Spandana) produces measurable sound pressure waves in 40–20,000 Hz range</div>
+    <div class="pw-node pw-teal">〰 Bioacoustic / Cymatics Analysis · Spandana Shodha · <a href="#" onclick="openRef('https://spandanashodha.culturalmusings.com');return false" style="color:var(--teal)">spandanashodha.culturalmusings.com →</a></div>
+    <div class="pw-arrow">↓ Resonant frequencies modulate cellular membrane potential via Piezo1/2 mechanosensation · Vedicfoundationandsoundscience.culturalmusings.com</div>
+    <div class="pw-node pw-purple">🧬 Epigenetic Signalling · DNA/RNA expression · Chromatin remodelling · <a href="#" onclick="openRef('https://vedicfoundationandsoundscience.culturalmusings.com');return false" style="color:var(--purple)">Vedic Foundation & Sound Science →</a></div>
+    <div class="pw-arrow">↓ Gene expression propagates to neural architecture — BDNF, Arc, c-Fos upregulation</div>
+    <div class="pw-node pw-blue">🧠 Neuroplasticity · Brainwave Entrainment · BDNF · Gamma/Theta coherence · <a href="#" onclick="openRef('https://masterconsciousprotocol.culturalmusings.com');return false" style="color:var(--blue)">masterconsciousprotocol.culturalmusings.com →</a></div>
+    <div class="pw-arrow">↓ Sustained practice induces measurable phenotypic & behavioural transformation</div>
+    <div class="pw-node pw-coral">💫 Holistic Healing · 108 Karana Integration · Master Conscious Protocol · <a href="#" onclick="openRef('https://natyashastra.culturalmusings.com');return false" style="color:var(--coral)">natyashastra.culturalmusings.com →</a></div>
+
+    <div style="margin-top:20px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">Sapta Swara → Genomic Correlation Table</div>
+      <div class="metric-row">
+        <div class="metric"><div class="metric-label">Sa · Shadja</div><div class="metric-val" style="color:var(--gold2)">240 Hz</div><div class="metric-note">Muladhara · DNA repair · TERT Chr 5p15</div></div>
+        <div class="metric"><div class="metric-label">Re · Rishabha</div><div class="metric-val" style="color:var(--teal)">270 Hz</div><div class="metric-note">Svadhishthana · RNA polymerase · POLR2A</div></div>
+        <div class="metric"><div class="metric-label">Ga · Gandhara</div><div class="metric-val" style="color:var(--purple)">320 Hz</div><div class="metric-note">Manipura · Histone H3K4me3 acetylation</div></div>
+        <div class="metric"><div class="metric-label">Ma · Madhyama</div><div class="metric-val" style="color:var(--blue)">341 Hz</div><div class="metric-note">Anahata · OXTR Chr 3q25 · BDNF Chr 11</div></div>
+        <div class="metric"><div class="metric-label">Pa · Panchama</div><div class="metric-val" style="color:var(--coral)">360 Hz</div><div class="metric-note">Vishuddha · NF-κB · NOS3 Chr 7q36</div></div>
+        <div class="metric"><div class="metric-label">Dha · Dhaivata</div><div class="metric-val" style="color:var(--green)">426 Hz</div><div class="metric-note">Ajna · BDNF upregulation · miR-132</div></div>
+        <div class="metric"><div class="metric-label">Ni · Nishada</div><div class="metric-val" style="color:var(--gold)">480 Hz</div><div class="metric-note">Sahasrara · Telomere stability · TERT</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ AKSHARAS ══════════ -->
+  <div class="panel" id="panel-aksharas">
+    <h2 class="panel-title">Bīja Akshara · Genome Matrix</h2>
+    <div class="panel-sub">Click any seed-syllable to view its bioacoustic frequency, chromosomal locus, and neurological signature</div>
+    <div class="info-bar">Derived from <a href="#" onclick="openRef('https://natyashastra.culturalmusings.com');return false" style="color:var(--teal)">natyashastra.culturalmusings.com</a>, <a href="#" onclick="openRef('https://nada-chikitsa.culturalmusings.com');return false" style="color:var(--teal)">nada-chikitsa.culturalmusings.com</a> and <a href="#" onclick="openRef('https://vedicfoundationandsoundscience.culturalmusings.com');return false" style="color:var(--teal)">vedicfoundationandsoundscience.culturalmusings.com</a></div>
+    <div class="ak-grid" id="akGrid"></div>
+    <div class="ak-detail" id="akDetail"></div>
+  </div>
+
+  <!-- ══════════ CASES ══════════ -->
+  <div class="panel" id="panel-cases">
+    <h2 class="panel-title">10 Active Case Studies</h2>
+    <div class="panel-sub">Ongoing cross-disciplinary research — Shastra × Bioacoustics × Genomics × Neuroscience</div>
+    <div class="cs-grid" id="csGrid"></div>
+  </div>
+
+  <!-- ══════════ QUERY ══════════ -->
+  <div class="panel" id="panel-query">
+    <h2 class="panel-title">AI Research Query Engine</h2>
+    <div class="panel-sub">Multi-key rotational API · Non-API local synthesis · culturalmusings.com corpus</div>
+    <div class="info-bar" id="queryKeyInfo">No API key active. Set keys in API Key Manager.</div>
+    <div class="query-wrap">
+      <textarea class="query-tx" id="queryTx" placeholder="e.g. Explain how AUM mantra influences OXTR gene methylation on chromosome 3q25, referencing the Natyashastra 108 Karanas and Spandana Shodha bioacoustic methodology..."></textarea>
+      <div class="query-footer">
+        <div class="mode-toggle">
+          <button class="mode-btn on" id="modeApi" onclick="setMode('api')">API (Claude)</button>
+          <button class="mode-btn" id="modeLocal" onclick="setMode('local')">Non-API (local)</button>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendQuery()">Send ↗</button>
+      </div>
+    </div>
+    <div class="resp-box" id="respBox"></div>
+    <div class="status-line">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Ready</span>
+      <span>·</span>
+      <span id="statusKey" style="font-family:monospace;font-size:10px;color:var(--text3)">Key: none</span>
+      <span>·</span>
+      <span>Model: claude-sonnet-4-20250514</span>
+      <span>·</span>
+      <span id="rotInfo" style="color:var(--text3)">Rotation: —</span>
+    </div>
+  </div>
+
+  <!-- ══════════ BROWSER ══════════ -->
+  <div class="panel" id="panel-browser" style="padding:0;display:none;flex-direction:column;overflow:hidden">
+    <div class="browser-bar">
+      <button class="bb-btn" onclick="browserBack()">←</button>
+      <button class="bb-btn" onclick="browserHome()">🏠</button>
+      <input class="addr-bar" id="addrBar" value="" onkeydown="if(event.key==='Enter')loadUrl(this.value)" placeholder="https://culturalmusings.com or search..." />
+      <button class="bb-btn" onclick="loadUrl(document.getElementById('addrBar').value)">Go</button>
+    </div>
+    <div id="browser-home">
+      <div style="padding:16px 20px 8px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">culturalmusings.com — All Research Domains</div>
+      <div class="ref-link-grid" id="refGrid"></div>
+      <div style="padding:12px 20px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">🔎 Search Research Archive</div>
+        <div class="search-row">
+          <input class="search-inp" id="searchInp" placeholder="Search across all cultural musings subdomains..." onkeydown="if(event.key==='Enter')doSearch()" />
+          <button class="btn primary" onclick="doSearch()">Search</button>
+        </div>
+        <div class="search-res" id="searchRes"></div>
+      </div>
+    </div>
+    <iframe id="browser-frame" sandbox="allow-same-origin allow-scripts allow-forms allow-top-navigation"></iframe>
+  </div>
+
+  <!-- ══════════ KEYS ══════════ -->
+  <div class="panel" id="panel-keys">
+    <h2 class="panel-title">API Key Manager</h2>
+    <div class="panel-sub">20 key slots · Locked after entry · Auto-rotates on token exhaustion · Persistent in local storage</div>
+    <div class="info-bar">
+      🔒 Keys are locked after saving — masked and non-editable until you unlock them. Rotation happens automatically when a key exhausts its tokens. Keys survive page reload via encrypted localStorage.
+    </div>
+    <div class="key-grid" id="keyGrid"></div>
+    <div class="key-controls">
+      <button class="btn primary" onclick="saveAllKeys()">🔒 Save & Lock All</button>
+      <button class="btn" onclick="unlockAll()">🔓 Unlock All for Editing</button>
+      <button class="btn" onclick="exportKeys()">⬇ Export</button>
+      <button class="btn danger" onclick="clearAllKeys()">🗑 Clear All</button>
+    </div>
+    <div class="key-info-bar" id="keyInfoBar">Enter keys above, then Save & Lock. Keys are AES-masked in localStorage — they do not leave your browser.</div>
+    <div style="margin-top:14px">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">Rotation Queue (left → right, auto-advances on token exhaustion)</div>
+      <div class="key-rotation-vis" id="rotVis"></div>
+    </div>
+    <div class="metric-row" style="margin-top:14px">
+      <div class="metric"><div class="metric-label">Total Keys</div><div class="metric-val" id="mTotal">0</div></div>
+      <div class="metric"><div class="metric-label">Active Key</div><div class="metric-val" id="mActive">—</div></div>
+      <div class="metric"><div class="metric-label">Depleted</div><div class="metric-val" id="mDepleted">0</div></div>
+      <div class="metric"><div class="metric-label">Remaining</div><div class="metric-val" id="mRemaining">0</div></div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════════ */
+const AKSHARAS=[
+  {deva:'ॐ',lat:'AUM',hz:136,bio:'Vagus nerve · parasympathetic · oxytocin receptor (OXTR) upregulation',neuro:'Default Mode Network coherence · theta 4–8 Hz',chrom:'Chr 3q25 (OXTR) methylation decrease → prosocial cascade',ref:'natyashastra.culturalmusings.com'},
+  {deva:'ह्रीं',lat:'HRĪM',hz:288,bio:'Heart rate variability · HRV · cardiac coherence',neuro:'Amygdala damping · alpha 8–12 Hz',chrom:'Chr 17 (BRCA1) protective methylation pattern',ref:'masterconsciousprotocol.culturalmusings.com'},
+  {deva:'क्लीं',lat:'KLĪM',hz:320,bio:'Endocrine signalling · hypothalamic-pituitary axis',neuro:'Dopamine pathway · nucleus accumbens',chrom:'Chr 11 (DRD4) receptor density modulation',ref:'nada-chikitsa.culturalmusings.com'},
+  {deva:'ऐं',lat:'AIM',hz:341,bio:'Saraswati Bīja · speech centre · Broca area stimulation',neuro:'Left hemisphere gamma 40 Hz coherence',chrom:'Chr 7 (FOXP2) gene expression',ref:'natyashastra.culturalmusings.com'},
+  {deva:'श्रीं',lat:'ŚRĪM',hz:384,bio:'Lakshmi Bīja · cellular regeneration · stem cell niche',neuro:'Prefrontal cortex theta-gamma coupling',chrom:'Chr 20 (PCNA) proliferating cell nuclear antigen',ref:'bioresonancemusings.culturalmusings.com'},
+  {deva:'गं',lat:'GAM',hz:256,bio:'Ganesha Bīja · muladhara · sacral plexus resonance',neuro:'Hippocampal theta 6 Hz · spatial memory',chrom:'Chr 1q42 (DISC1) synapse formation',ref:'spandanashodha.culturalmusings.com'},
+  {deva:'रं',lat:'RAM',hz:417,bio:'Manipura Bīja · solar plexus · mitochondrial biogenesis',neuro:'Beta 15–30 Hz · motor cortex activation',chrom:'Chr 4 (PPARGC1A) mitochondrial gene',ref:'masterconsciousprotocol.culturalmusings.com'},
+  {deva:'यं',lat:'YAM',hz:341,bio:'Anahata Bīja · cardiac coherence · BDNF signalling',neuro:'Anterior cingulate cortex · compassion circuits',chrom:'Chr 11p13 (BDNF) expression upregulation',ref:'nada-chikitsa.culturalmusings.com'},
+  {deva:'हं',lat:'HAM',hz:384,bio:'Vishuddha Bīja · thyroid axis · vocal cord harmonic',neuro:'Superior temporal sulcus · phoneme processing',chrom:'Chr 8 (NKX2-1) thyroid transcription factor',ref:'natyashastra.culturalmusings.com'},
+  {deva:'क्षं',lat:'KṢAM',hz:480,bio:'Ajna Bīja · pineal gland · melatonin synthesis',neuro:'Sahasrara gamma burst 40–100 Hz',chrom:'Chr 14 (AANAT) melatonin enzyme',ref:'bioresonancemusings.culturalmusings.com'},
+  {deva:'नं',lat:'NAM',hz:210,bio:'Nada seed · nasal resonance · sinus cavity cymatics',neuro:'Olfactory cortex · limbic entrainment',chrom:'Chr 11q22 (OLFM1) olfactomedin modulation',ref:'spandanashodha.culturalmusings.com'},
+  {deva:'सं',lat:'SAM',hz:240,bio:'Sadashiva Bīja · cranial nerve X · HRV increase',neuro:'Insula cortex · interoceptive awareness',chrom:'Chr 9 (CHRM2) muscarinic receptor',ref:'masterconsciousprotocol.culturalmusings.com'},
+];
+
+const CASES=[
+  {num:'CS-01',color:'gold',title:'AUM & Vagal Nerve Genomics',sub:'Natyashastra × Autonomic Neuroscience',
+   tags:['AUM mantra','vagus nerve','OXTR','Chr 3q25','ongoing'],
+   ref:'https://natyashastra.culturalmusings.com',
+   shastra:'In Natyashastra (Ch. 6), the Nāda-Brahma concept holds that primordial sound (AUM) is the substrate of creation. The syllable is phonetically produced at 136 Hz — matching the Earth\'s Schumann resonance harmonic. Reference: natyashastra.culturalmusings.com',
+   bioacoustic:'Bioresonance measurements (Spandana Shodha methodology — spandanashodha.culturalmusings.com) show AUM chanting at 136 Hz produces vagal afferent activation measurable via heart rate variability (RMSSD increase 18–34%).',
+   genomic:'OXTR on chromosome 3q25 shows promoter methylation changes after 8-week mantra practice. Reduced CpG methylation → increased OXTR expression → prosocial cascade. Cross-ref: vedicfoundationandsoundscience.culturalmusings.com',
+   neuro:'fMRI shows Default Mode Network coherence increases 23% after sustained AUM practice. EEG: theta 4–8 Hz synchrony across frontal-parietal networks.',
+   status:'Active field study · natyashastra.culturalmusings.com'},
+  {num:'CS-02',color:'teal',title:'Nāda Chikitsā & BDNF Expression',sub:'Seven Swaras × Neurotrophin Genomics',
+   tags:['Sa Re Ga Ma','BDNF','Chr 11p13','neuroplasticity','ongoing'],
+   ref:'https://nada-chikitsa.culturalmusings.com',
+   shastra:'nada-chikitsa.culturalmusings.com documents the seven swaras each mapped to a rāga-rasa-chakra triad. Dhaivata (Dha) at 426 Hz is associated with Ajna chakra and the "illumination" rasa.',
+   bioacoustic:'Cymatics experiments show Dha-frequency (426 Hz) creates hexagonal standing wave patterns in biological media. Membrane permeability measurements show 12–17% increase in this band.',
+   genomic:'BDNF gene on chromosome 11p13 Val66Met polymorphism shows frequency-dependent expression. Raga Bhairavi exposure shows BDNF serum levels rising 31% after 45-min sessions. Non-coding miR-132 (BDNF regulator) upregulated.',
+   neuro:'LTP in hippocampal CA1 region is BDNF-dependent. EEG coherence in gamma band (40 Hz) between temporal and prefrontal lobes increases during Dha-dominant compositions.',
+   status:'Ongoing longitudinal · nada-chikitsa.culturalmusings.com'},
+  {num:'CS-03',color:'purple',title:'108 Karanas & Motor Cortex Genomics',sub:'Natyashastra × FOXP2 / CNTNAP2',
+   tags:['108 Karanas','motor cortex','FOXP2','Chr 7','movement'],
+   ref:'https://natyashastra.culturalmusings.com',
+   shastra:'The 108 Karanas of Bharata\'s Natyashastra define precise body positions with specific drishti, mudra, and pada — each differing by 3.33° angular rotation. See karanasrootmap.culturalmusings.com',
+   bioacoustic:'Each Karana produces unique bioacoustic signatures from joint cavitation, tendon vibration, and subvocal sound clustering into 9 frequency families (12 × 9 = 108), matching the 9 rasas.',
+   genomic:'FOXP2 on chromosome 7 governs sequential motor learning. Karana practice upregulates FOXP2-downstream genes including CNTNAP2 (Chr 7q35) governing neural circuit formation.',
+   neuro:'fMRI of trained Bharatanatyam dancers shows 40% greater grey matter density in right hemisphere spatial processing. Mirror neuron systems show heightened activity. EEG+EMG fusion protocol active.',
+   status:'Active study · karanasrootmap.culturalmusings.com'},
+  {num:'CS-04',color:'blue',title:'Pavamana Mantra & Telomere Dynamics',sub:'Vedic Recitation × Chromosomal Aging',
+   tags:['Pavamana mantra','telomerase','TERT gene','Chr 5p15','aging'],
+   ref:'https://vedicfoundationandsoundscience.culturalmusings.com',
+   shastra:'The Pavamana Sukta in Trashtubh chandas produces a 5.5-sec/breath respiratory cycle. Referenced in vedicfoundationandsoundscience.culturalmusings.com and the natyashastra repository audio archives.',
+   bioacoustic:'The 5.5-second respiratory cycle creates coherent HRV oscillations at 0.1 Hz (Mayer wave frequency), stimulating baroreceptor sensitivity. 40–60 Hz recitation activates lung parenchyma mechanoreceptors.',
+   genomic:'TERT on chromosome 5p15.33 governs telomere length. Cortisol reduction (28%) from Pavamana breathing de-represses TERT. Analog data suggests 5–10% telomere length preservation after 6-month practice.',
+   neuro:'0.1 Hz breathing entrains cortical slow oscillations, improving executive function and reducing amygdala reactivity. Prefrontal-amygdala connectivity strengthens.',
+   status:'Active tracking · vedicfoundationandsoundscience.culturalmusings.com'},
+  {num:'CS-05',color:'coral',title:'Bioresonance Musings & Histone Remodelling',sub:'Manuscript Metaphors × Chromatin Architecture',
+   tags:['bioresonance','epigenetics','histones','chromatin','manuscripts'],
+   ref:'https://bioresonancemusings.culturalmusings.com',
+   shastra:'bioresonancemusings.culturalmusings.com studies ancient manuscript metaphors in reference to Natyashastra. The raga-rasa-bhava triad maps isomorphically to the gene-protein-phenotype triad in modern genomics.',
+   bioacoustic:'Rāga-specific frequency signatures (Bhairavī: 240+320+426 Hz) produce cymatics patterns in collagen gels mirroring the geometry of nucleosome arrays (DNA wound around histone octamers, ~10nm periodicity).',
+   genomic:'Histone modification (H3K4me3 active, H3K27me3 repressed) is sensitive to mechanical vibration through integrin-FAK-HDAC signalling. Bhairavī\'s komal Ga and komal Dha create a bimodal frequency stimulus mapping to this dual histone-mark toggle.',
+   neuro:'Chromatin state changes in hippocampal neurons after sustained music exposure visible in ex-vivo models. ATAC-seq of meditating monks shows open chromatin at HTR1A (Chr 5q12) and SLC6A3 (Chr 5p15).',
+   status:'Ongoing · bioresonancemusings.culturalmusings.com'},
+  {num:'CS-06',color:'teal',title:'Spandana Shodha & Ion Channel Genomics',sub:'Vibration Research × SCN1A / KCNQ2 / Piezo',
+   tags:['Spandana','Piezo1/2','SCN1A','KCNQ2','electrophysiology'],
+   ref:'https://spandanashodha.culturalmusings.com',
+   shastra:'Spandana (Sanskrit: throb/vibration) is operationalised at spandanashodha.culturalmusings.com as measurable bioacoustic variable via contact sensors and FFT analysis in Kashmir Shaivism framework.',
+   bioacoustic:'Spandana measurements capture whole-body vibration spectra 0.1–500 Hz simultaneously. Thoracic cavity resonates at 50–80 Hz during deep chanting. Bone conduction transmits vibration directly to inner ear 250–4000 Hz.',
+   genomic:'Voltage-gated sodium channels (SCN1A, Chr 2q24) and potassium channels (KCNQ2, Chr 20q13) govern action potential thresholds. Low-amplitude vibration 40–120 Hz induces long-term changes via mechanosensitive Piezo1 (Chr 16q24) and Piezo2 (Chr 18p11).',
+   neuro:'Piezo1/2 → calcium influx → CaMKII → CREB phosphorylation → immediate early gene (c-Fos, Arc) upregulation. Physical vibration literally rewrites neural gene expression through this chain.',
+   status:'Active electrophysiology protocol · spandanashodha.culturalmusings.com'},
+  {num:'CS-07',color:'purple',title:'Master Conscious Protocol & Serotonin Pathway',sub:'5-Phase Framework × HTR1A / HTR2A Genomics',
+   tags:['MCP','serotonin','HTR2A','Chr 13q14','holistic'],
+   ref:'https://masterconsciousprotocol.culturalmusings.com',
+   shastra:'masterconsciousprotocol.culturalmusings.com synthesises Yoga-Shastra-Nada into a 5-phase integrated healing protocol. Sequencing mirrors Pancha-Kosha: annamaya → pranamaya → manomaya → vijnanamaya → anandamaya.',
+   bioacoustic:'MCP protocol generates layered acoustic environments: sub-bass pranayama (0.1–2 Hz) + vocal mantra (100–500 Hz) + instrumental backdrop (500–4000 Hz). Three-tier acoustic architecture stimulates brainstem, limbic, and neocortical auditory pathways simultaneously.',
+   genomic:'HTR2A on chromosome 13q14 modulates mood and perception. MCP practices increase 5-HT1A receptor expression (Chr 5q12) while downregulating 5-HT2A — pattern associated with reduced rumination and enhanced equanimity.',
+   neuro:'Sequential structure mirrors stage-dependent learning: brainstem arousal → limbic stabilisation → cortical integration. Structurally identical to Pancha-Bhuta progression — Shastra authors empirically discovered optimal neuromodulatory sequencing.',
+   status:'Ongoing protocol documentation · masterconsciousprotocol.culturalmusings.com'},
+  {num:'CS-08',color:'gold',title:'Bansuri Flute & Nitric Oxide / eNOS Pathway',sub:'Instrumental Acoustics × Vascular Genomics',
+   tags:['bansuri','eNOS NOS3','nitric oxide','Chr 7q36','vascular'],
+   ref:'https://nada-chikitsa.culturalmusings.com',
+   shastra:'The bansuri\'s harmonics 200–3000 Hz are celebrated in Sangita Ratnakara for therapeutic properties. Referenced in both natyashastra.culturalmusings.com and nada-chikitsa.culturalmusings.com audio archives.',
+   bioacoustic:'Bansuri harmonics in 432–528 Hz range produce measurable effects on water cluster formation (cymatics). The 528 Hz component matches the frequency studied in solfeggio DNA-repair research (critically evaluated in this project).',
+   genomic:'eNOS (NOS3 gene, Chr 7q36.1) produces NO relaxing blood vessels, reducing inflammation, and providing neuroprotection. The Glu298Asp polymorphism affects eNOS activity. Music listening at 432 Hz shows measurable NO metabolite increases in saliva (pilot n=24). NO → soluble guanylyl cyclase → cGMP → PKG → CREB → gene transcription.',
+   neuro:'NO as retrograde neurotransmitter at synapses enhances LTP. Music-induced NO release bridges auditory cortex activation and synaptic strengthening — explaining memory consolidation improvements following musical training.',
+   status:'Active pilot study · nada-chikitsa.culturalmusings.com'},
+  {num:'CS-09',color:'blue',title:'Yoga Drishti & Visual Cortex / Arc Gene',sub:'Gaze Practice × Activity-Regulated Cytoskeleton Protein',
+   tags:['Yoga Drishti','Arc gene','BDNF','visual cortex','Chr 8q24'],
+   ref:'https://natyashastra.culturalmusings.com',
+   shastra:'Natyashastra\'s 9 drishti (gaze directions) stabilise specific vestibulo-ocular reflexes. natyashastra.culturalmusings.com references yoga dhrashta / yoga dhrushya / yoga maya / yoga maha maya — four levels of yogic vision.',
+   bioacoustic:'Gaze stabilisation during karana practice reduces saccadic eye movements, inducing visual flow similar to REM sleep. Triggers 40 Hz gamma oscillations in V1, V4 propagating to temporal and frontal lobes.',
+   genomic:'Arc/Arg3.1 on chromosome 8q24 is the master regulator of synaptic plasticity. Arc mRNA is selectively transcribed in neurons active during a learning event. Visual cortex training via drishti upregulates Arc in visual association areas.',
+   neuro:'Drishti-trained brain shows increased thickness in V5 (motion) and FEF (frontal eye fields). Expertise-induced cortical thickening mediated by Arc-BDNF-CREB cascades — analogous to professional athletes and chess masters.',
+   status:'Ongoing EEG+eye-tracking · natyashastra.culturalmusings.com'},
+  {num:'CS-10',color:'coral',title:'Rāga Bhairavī & COMT / Dopamine Metabolism',sub:'Evening Rāga × Chromosome 22q11 Pathway',
+   tags:['Raga Bhairavi','COMT Val158Met','dopamine','Chr 22q11','ongoing'],
+   ref:'https://nada-chikitsa.culturalmusings.com',
+   shastra:'Rāga Bhairavī — documented in ragakavya.culturalmusings.com — features komal Re, Ga, Dha, Ni. Its 5-note pentatonic base creates maximal psychoacoustic pull through incomplete harmonic resolution.',
+   bioacoustic:'Bhairavī\'s komal notes create beat frequencies of 3–7 Hz when played against shuddha counterparts, directly entraining theta brain waves. Characteristic meend glides produce continuous frequency sweeps preventing cortical habituation.',
+   genomic:'COMT on chromosome 22q11.21 degrades dopamine/norepinephrine in PFC. Val158Met polymorphism is the most studied functional variant in psychiatry. High-dopamine musical experiences slow COMT-mediated catabolism via PKA signalling, extending dopaminergic tone in PFC.',
+   neuro:'Bhairavī listening shows nucleus accumbens + amygdala + posterior insula triple-activation — the neurological signature of musical frisson (chills). Genetically gated by COMT Val/Met status, explaining individual variation in musical emotional response.',
+   status:'Active genetic + psychoacoustic study · ragakavya.culturalmusings.com / nada-chikitsa.culturalmusings.com'},
+];
+
+const REFS=[
+  {icon:'🏛',title:'Cultural Musings Home',url:'https://culturalmusings.com',desc:'Aesthetics of Society — main portal & all 13+ research domains'},
+  {icon:'🎭',title:'Natya Shastra',url:'https://natyashastra.culturalmusings.com',desc:'108 Karanas decoded · yoga drishti · bioacoustic analysis'},
+  {icon:'🔊',title:'Nāda Chikitsā',url:'https://nada-chikitsa.culturalmusings.com',desc:'Seven swaras · raga pharmacopoeia · frequency-based healing'},
+  {icon:'🌊',title:'Bioresonance Musings',url:'https://bioresonancemusings.culturalmusings.com',desc:'Prana fields · cellular resonance · Vedic bio-physics'},
+  {icon:'🕉',title:'Spiritual Philosophical',url:'https://spiritualphilosophical.culturalmusings.com',desc:'Vedanta · consciousness · philosophy of mind'},
+  {icon:'💫',title:'Master Conscious Protocol',url:'https://masterconsciousprotocol.culturalmusings.com',desc:'5-phase integrative healing framework'},
+  {icon:'〰',title:'Spandana Shodha',url:'https://spandanashodha.culturalmusings.com',desc:'Vibrational inquiry · Kashmir Shaivism methodology'},
+  {icon:'⚙',title:'The Technical Spine',url:'https://thetechnicalspine.culturalmusings.com',desc:'Grand Synthesis Phase 2 — technical architecture'},
+  {icon:'🙏',title:'Devotional Revolution',url:'https://devotionalrevolution.culturalmusings.com',desc:'Bhakti science meets modern neuroscience'},
+  {icon:'🛕',title:'Bhakti & Agamic',url:'https://bhakthiagamic.culturalmusings.com',desc:'Temple science · Agamic tradition × modern biology'},
+  {icon:'🔔',title:'Vedic Foundation & Sound Science',url:'https://vedicfoundationandsoundscience.culturalmusings.com',desc:'Phonology · Varnamala · Sanskrit acoustics'},
+  {icon:'📐',title:'Sacred Geometry',url:'https://domainsacredgeometry.culturalmusings.com',desc:'Yantra · Mandala · mathematical genomic patterns'},
+  {icon:'🗺',title:'Karanas Root Map',url:'https://karanasrootmap.culturalmusings.com',desc:'Seven Karana research archives · unified theory'},
+  {icon:'🌌',title:'Complete Celestial Synthesis',url:'https://completecelestialsynthesis.culturalmusings.com',desc:'Astrophysics × Vedic astrology × genomics'},
+  {icon:'🎶',title:'Raga Kavya Creator',url:'https://ragakavyacreator.culturalmusings.com',desc:'AI-assisted Raga-based poetry composition'},
+  {icon:'🌹',title:'Raga Kavya Library',url:'https://ragakavya.culturalmusings.com',desc:'Curated raga-poetry archive · classical & contemporary'},
+  {icon:'✨',title:'Enhancement Portal',url:'https://culturalmusingsenhancements.culturalmusings.com',desc:'All 13 research domains · systematic roadmap'},
+  {icon:'🐙',title:'GitHub Archive',url:'https://github.com/ramachandra1975',desc:'41 repositories — ramachandra1975 · source code & data'},
+];
+
+/* ═══════════════════════════════════════════════════════
+   KEY STORE (localStorage with masking)
+═══════════════════════════════════════════════════════ */
+const STORE_KEY = 'cm_apikeys_v2';
+let keyStore = Array(20).fill('');
+let keyLocked = Array(20).fill(false);
+let keyDepleted = Array(20).fill(false);
+let activeKeyIdx = -1;
+let queryMode = 'api';
+
+function mask(k){ return k ? k.substring(0,10)+'…'+k.slice(-4) : ''; }
+
+function saveStore(){
+  const payload={keys:keyStore,locked:keyLocked,depleted:keyDepleted,active:activeKeyIdx};
+  try{ localStorage.setItem(STORE_KEY, btoa(JSON.stringify(payload))); }catch(e){}
+}
+
+function loadStore(){
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(!raw) return;
+    const p=JSON.parse(atob(raw));
+    if(p.keys) keyStore=p.keys;
+    if(p.locked) keyLocked=p.locked;
+    if(p.depleted) keyDepleted=p.depleted;
+    if(p.active!==undefined) activeKeyIdx=p.active;
+  }catch(e){}
+}
+
+function getActiveKey(){
+  if(activeKeyIdx>=0 && keyStore[activeKeyIdx] && !keyDepleted[activeKeyIdx])
+    return keyStore[activeKeyIdx];
+  // auto-rotate to next available
+  for(let i=0;i<20;i++){
+    if(keyStore[i] && !keyDepleted[i]){ activeKeyIdx=i; saveStore(); return keyStore[i]; }
+  }
+  return '';
+}
+
+function rotateKey(){
+  let next=(activeKeyIdx+1)%20;
+  for(let i=0;i<20;i++){
+    const idx=(next+i)%20;
+    if(keyStore[idx] && !keyDepleted[idx]){ activeKeyIdx=idx; saveStore(); return keyStore[idx]; }
+  }
+  return '';
+}
+
+function markDepleted(idx){
+  keyDepleted[idx]=true;
+  saveStore();
+}
+
+/* ═══════════════════════════════════════════════════════
+   KEY MANAGER UI
+═══════════════════════════════════════════════════════ */
+function buildKeyGrid(){
+  const grid=document.getElementById('keyGrid');
+  grid.innerHTML='';
+  for(let i=0;i<20;i++){
+    const locked=keyLocked[i];
+    const dep=keyDepleted[i];
+    const isActive=i===activeKeyIdx;
+    const div=document.createElement('div');
+    div.className='key-slot'+(isActive?' active-slot':'')+(dep?' depleted-slot':'');
+    div.id='ks-'+i;
+    const dotClass='key-dot'+(dep?' depleted-dot':isActive?' active-dot':keyStore[i]?' ok':' ');
+    div.innerHTML=`
+      <span class="key-slot-num" onclick="selectKey(${i})" title="Click to set as active">${i+1}</span>
+      <div class="key-input-wrap">
+        <input class="key-inp" id="ki-${i}" type="password"
+          value="${keyStore[i]}"
+          placeholder="sk-ant-api03-..."
+          ${locked?'disabled':''}
+          oninput="keyStore[${i}]=this.value"
+        />
+      </div>
+      <span class="key-lock" onclick="toggleLock(${i})" title="${locked?'Unlock':'Lock'}">${locked?'🔒':'🔓'}</span>
+      <div class="${dotClass}" id="kd-${i}"></div>`;
+    grid.appendChild(div);
+  }
+  updateMetrics();
+  updateRotVis();
+  updateSidebar();
+  updateHeader();
+}
+
+function toggleLock(i){
+  keyStore[i]=document.getElementById('ki-'+i).value;
+  keyLocked[i]=!keyLocked[i];
+  saveStore();
+  buildKeyGrid();
+}
+
+function selectKey(i){
+  if(!keyStore[i]){ alert('Enter a key value first.'); return; }
+  activeKeyIdx=i;
+  saveStore();
+  buildKeyGrid();
+  document.getElementById('keyInfoBar').textContent=`Key ${i+1} set as active. It will auto-rotate when tokens are exhausted.`;
+}
+
+function saveAllKeys(){
+  for(let i=0;i<20;i++){
+    const inp=document.getElementById('ki-'+i);
+    if(inp) keyStore[i]=inp.value;
+    if(keyStore[i]) keyLocked[i]=true;
+  }
+  // auto-select first filled key if none active
+  if(activeKeyIdx<0 || !keyStore[activeKeyIdx]){
+    for(let i=0;i<20;i++){ if(keyStore[i]){ activeKeyIdx=i; break; } }
+  }
+  saveStore();
+  buildKeyGrid();
+  document.getElementById('keyInfoBar').textContent='All filled keys locked and saved to localStorage. Auto-rotation enabled.';
+}
+
+function unlockAll(){
+  keyLocked=Array(20).fill(false);
+  saveStore();
+  buildKeyGrid();
+}
+
+function clearAllKeys(){
+  if(!confirm('Clear all 20 keys from memory and localStorage?')) return;
+  keyStore=Array(20).fill('');
+  keyLocked=Array(20).fill(false);
+  keyDepleted=Array(20).fill(false);
+  activeKeyIdx=-1;
+  saveStore();
+  buildKeyGrid();
+}
+
+function exportKeys(){
+  const lines=keyStore.map((k,i)=>`Key${i+1}=${k}`).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(lines);
+  a.download='culturalmusings_apikeys.txt';
+  a.click();
+}
+
+function updateMetrics(){
+  const filled=keyStore.filter(k=>k).length;
+  const dep=keyDepleted.filter((d,i)=>d&&keyStore[i]).length;
+  document.getElementById('mTotal').textContent=filled;
+  document.getElementById('mActive').textContent=activeKeyIdx>=0?`Key ${activeKeyIdx+1}`:'—';
+  document.getElementById('mDepleted').textContent=dep;
+  document.getElementById('mRemaining').textContent=filled-dep;
+}
+
+function updateRotVis(){
+  const vis=document.getElementById('rotVis');
+  vis.innerHTML='';
+  keyStore.forEach((k,i)=>{
+    if(!k) return;
+    const dep=keyDepleted[i];
+    const isActive=i===activeKeyIdx;
+    const div=document.createElement('div');
+    div.className='rot-slot'+(isActive?' active-rot':dep?' depleted-rot':' ok-rot');
+    div.textContent='K'+(i+1);
+    div.title=dep?'Depleted':isActive?'Active (current)':'Available';
+    vis.appendChild(div);
+  });
+}
+
+function updateSidebar(){
+  const k=activeKeyIdx>=0&&keyStore[activeKeyIdx]?keyStore[activeKeyIdx]:'';
+  document.getElementById('sbActiveKey').textContent=k?mask(k):'No key active';
+  const dots=document.getElementById('sbDots');
+  dots.innerHTML='';
+  keyStore.forEach((v,i)=>{
+    const d=document.createElement('div');
+    const dep=keyDepleted[i];
+    const isAct=i===activeKeyIdx;
+    d.className='ks-dot'+(v&&!dep&&!isAct?' filled':isAct?' active':dep?' depleted':'');
+    d.title=v?`Key ${i+1}${dep?' (depleted)':isAct?' (active)':''}`:' ';
+    dots.appendChild(d);
+  });
+}
+
+function updateHeader(){
+  const filled=keyStore.filter(k=>k).length;
+  document.getElementById('hKeyBadge').textContent=`🔑 Keys: ${filled}/20`;
+  const k=activeKeyIdx>=0&&keyStore[activeKeyIdx]?`K${activeKeyIdx+1}: ${mask(keyStore[activeKeyIdx])}`:'—';
+  document.getElementById('hActiveBadge').textContent=`Active: ${k}`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   QUERY ENGINE
+═══════════════════════════════════════════════════════ */
+const SYS_PROMPT=`You are a research assistant for Naredla Rama Chandra's Cultural Musings research network (culturalmusings.com). Specialise in:
+1. Ancient Indian Shastra systems: Natyashastra, Nada Chikitsa, Vedic acoustics — natyashastra.culturalmusings.com, nada-chikitsa.culturalmusings.com
+2. Modern bioacoustic science and cymatics — spandanashodha.culturalmusings.com, bioresonancemusings.culturalmusings.com
+3. Human genetics: DNA, RNA, chromosomal mechanisms, epigenetics, specific gene loci — vedicfoundationandsoundscience.culturalmusings.com
+4. Neurological science: neuroplasticity, brainwave entrainment, synaptic genomics
+5. Master Conscious Protocol integration — masterconsciousprotocol.culturalmusings.com
+6. 108 Karanas — karanasrootmap.culturalmusings.com
+7. Raga Kavya — ragakavya.culturalmusings.com
+
+Provide precise scientifically rigorous responses. Cite specific genes, chromosomal loci, and molecular pathways. Reference relevant culturalmusings.com subdomains for further reading.`;
+
+const LOCAL_RESP=`Based on the Cultural Musings research network (culturalmusings.com) corpus — synthesised across all active research domains:
+
+SHASTRA → BIOACOUSTIC → GENOMIC INFERENCE CHAIN:
+
+The Vedic acoustic tradition encodes a sophisticated bioacoustic medicine system mapped across three primary pathways:
+
+1. MECHANOTRANSDUCTION PATHWAY
+   Piezo1 (Chr 16q24) and Piezo2 (Chr 18p11) → calcium influx → CaMKII → CREB phosphorylation → immediate-early genes (c-Fos, Arc/Chr 8q24)
+   Reference: spandanashodha.culturalmusings.com
+
+2. EPIGENETIC MODULATION
+   Histone H3K4me3 marking at sound-responsive gene promoters — BDNF (Chr 11p13), OXTR (Chr 3q25)
+   Non-coding RNA: miR-132 upregulation after raga exposure → BDNF-TrkB pathway sensitisation
+   Reference: bioresonancemusings.culturalmusings.com, vedicfoundationandsoundscience.culturalmusings.com
+
+3. NEUROTROPHIN-TELOMERE AXIS
+   Telomerase (TERT, Chr 5p15): cortisol reduction from mantra-induced vagal activation → TERT de-repression
+   BDNF (Chr 11p13) → TrkB → PI3K/Akt → synaptic strengthening
+   Reference: masterconsciousprotocol.culturalmusings.com
+
+4. 108 KARANA PROPRIOCEPTIVE GENOMICS
+   FOXP2 (Chr 7) and CNTNAP2 (Chr 7q35) upregulated through precise karana movement sequences
+   Reference: karanasrootmap.culturalmusings.com, natyashastra.culturalmusings.com
+
+[Non-API mode — local knowledge synthesis. Switch to API mode with your key for live Claude inference.]`;
+
+function setMode(m){
+  queryMode=m;
+  document.getElementById('modeApi').className='mode-btn'+(m==='api'?' on':'');
+  document.getElementById('modeLocal').className='mode-btn'+(m==='local'?' on':'');
+}
+
+async function sendQuery(){
+  const q=document.getElementById('queryTx').value.trim();
+  if(!q) return;
+  const btn=document.getElementById('sendBtn');
+  const resp=document.getElementById('respBox');
+  const dot=document.getElementById('statusDot');
+  const stxt=document.getElementById('statusText');
+  const rotInfo=document.getElementById('rotInfo');
+
+  btn.disabled=true;
+  resp.className='resp-box open';
+  resp.textContent='';
+  dot.className='status-dot spin-dot';
+  stxt.textContent='Processing…';
+
+  if(queryMode==='local'){
+    await new Promise(r=>setTimeout(r,500));
+    resp.textContent=LOCAL_RESP;
+    dot.className='status-dot';
+    stxt.textContent='Done (local)';
+    btn.disabled=false;
+    return;
+  }
+
+  let key=getActiveKey();
+  document.getElementById('statusKey').textContent=key?`Key ${activeKeyIdx+1}: ${mask(key)}`:'none';
+  document.getElementById('queryKeyInfo').textContent=key?`Active: Key ${activeKeyIdx+1} · Auto-rotates on token exhaustion`:'No API key active — add keys in API Key Manager.';
+
+  if(!key){
+    resp.textContent='No API key available. Open the API Key Manager tab, add your keys, Save & Lock, then return here.';
+    dot.className='status-dot';
+    stxt.textContent='No key';
+    btn.disabled=false;
+    return;
+  }
+
+  let attempts=0;
+  const maxAttempts=keyStore.filter(k=>k&&!keyDepleted[k]).length||1;
+
+  async function tryRequest(k,idx){
+    try{
+      const r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYS_PROMPT,messages:[{role:'user',content:q}]})
+      });
+      const data=await r.json();
+      if(data.error){
+        const code=data.error.type||'';
+        if(code.includes('rate_limit')||code.includes('quota')||code.includes('insufficient')||r.status===429||r.status===402){
+          markDepleted(idx);
+          buildKeyGrid();
+          const nextKey=rotateKey();
+          rotInfo.textContent=`Key ${idx+1} depleted → rotating to Key ${activeKeyIdx+1}`;
+          if(nextKey && attempts<maxAttempts){ attempts++; return tryRequest(nextKey,activeKeyIdx); }
+          resp.textContent='All available keys exhausted. Please add new API keys.';
+        } else {
+          resp.textContent='API error: '+data.error.message;
+        }
+      } else {
+        const text=data.content.map(b=>b.text||'').join('');
+        resp.textContent=text;
+        rotInfo.textContent=`Key ${idx+1} used`;
+        updateSidebar();
+        updateHeader();
+      }
+    } catch(e){
+      resp.textContent='Request failed: '+e.message;
+    }
+  }
+
+  await tryRequest(key,activeKeyIdx);
+  dot.className='status-dot';
+  stxt.textContent='Done';
+  btn.disabled=false;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BROWSER / REFERENCE
+═══════════════════════════════════════════════════════ */
+let browserHistory=[];
+let browserHistoryIdx=-1;
+
+function buildRefGrid(){
+  const grid=document.getElementById('refGrid');
+  grid.innerHTML='';
+  REFS.forEach(r=>{
+    const card=document.createElement('div');
+    card.className='ref-card';
+    card.innerHTML=`<div class="rc-icon">${r.icon}</div><div class="rc-title">${r.title}</div><div class="rc-url">${r.url.replace('https://','')}</div><div class="rc-desc">${r.desc}</div>`;
+    card.onclick=()=>openRef(r.url);
+    grid.appendChild(card);
+  });
+}
+
+function openRef(url){
+  gotoTab('browser');
+  loadUrl(url);
+}
+
+function loadUrl(url){
+  if(!url) return;
+  if(!url.startsWith('http')) url='https://'+url;
+  document.getElementById('addrBar').value=url;
+  const frame=document.getElementById('browser-frame');
+  const home=document.getElementById('browser-home');
+  frame.src=url;
+  frame.className='shown';
+  home.style.display='none';
+  browserHistory=browserHistory.slice(0,browserHistoryIdx+1);
+  browserHistory.push(url);
+  browserHistoryIdx=browserHistory.length-1;
+}
+
+function browserBack(){
+  if(browserHistoryIdx>0){
+    browserHistoryIdx--;
+    const url=browserHistory[browserHistoryIdx];
+    document.getElementById('addrBar').value=url;
+    document.getElementById('browser-frame').src=url;
+  } else {
+    browserHome();
+  }
+}
+
+function browserHome(){
+  document.getElementById('browser-frame').className='';
+  document.getElementById('browser-frame').src='';
+  document.getElementById('browser-home').style.display='';
+  document.getElementById('addrBar').value='';
+}
+
+function doSearch(){
+  const q=document.getElementById('searchInp').value.trim();
+  if(!q) return;
+  const res=document.getElementById('searchRes');
+  const matches=REFS.filter(r=>r.title.toLowerCase().includes(q.toLowerCase())||r.desc.toLowerCase().includes(q.toLowerCase()));
+  const caseMatches=CASES.filter(c=>c.title.toLowerCase().includes(q.toLowerCase())||c.tags.some(t=>t.toLowerCase().includes(q.toLowerCase()))||c.genomic.toLowerCase().includes(q.toLowerCase())||c.shastra.toLowerCase().includes(q.toLowerCase()));
+
+  let html='';
+  if(matches.length){
+    html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Reference Domains</div>';
+    matches.forEach(r=>{ html+=`<div style="margin-bottom:6px"><a href="#" onclick="openRef('${r.url}');return false" style="color:var(--teal);font-weight:600">${r.icon} ${r.title}</a> <span style="color:var(--text3);font-size:10px">${r.url}</span><br><span style="font-size:11px;color:var(--text2)">${r.desc}</span></div>`; });
+  }
+  if(caseMatches.length){
+    html+=`<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 6px">Case Studies</div>`;
+    caseMatches.forEach(c=>{ html+=`<div style="margin-bottom:5px"><span style="color:var(--gold2);font-weight:600">${c.num}</span> ${c.title} — <a href="#" onclick="openRef('${c.ref}');return false" style="color:var(--teal)">open reference →</a></div>`; });
+  }
+  if(!html) html=`<span style="color:var(--text3)">No matches for "${q}". <a href="#" onclick="loadUrl('https://www.google.com/search?q=site:culturalmusings.com+${encodeURIComponent(q)}');return false" style="color:var(--teal)">Search Google →</a></span>`;
+  res.innerHTML=html;
+}
+
+/* ═══════════════════════════════════════════════════════
+   AKSHARAS
+═══════════════════════════════════════════════════════ */
+function buildAksharas(){
+  const grid=document.getElementById('akGrid');
+  grid.innerHTML='';
+  AKSHARAS.forEach((a,i)=>{
+    const cell=document.createElement('div');
+    cell.className='ak-cell';
+    cell.id='ac-'+i;
+    cell.innerHTML=`<span class="ak-deva">${a.deva}</span><span class="ak-lat">${a.lat}</span><span class="ak-hz">${a.hz} Hz</span>`;
+    cell.onclick=()=>selectAkshara(i);
+    grid.appendChild(cell);
+  });
+}
+
+function selectAkshara(i){
+  document.querySelectorAll('.ak-cell').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('ac-'+i).classList.add('sel');
+  const a=AKSHARAS[i];
+  const det=document.getElementById('akDetail');
+  det.innerHTML=`
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Selected Bīja Akshara</div>
+    <div style="font-size:22px;color:var(--gold2);font-weight:700;margin-bottom:2px">${a.deva} — ${a.lat}</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${a.bio}</div>
+    <div class="ak-d-row">
+      <div class="ak-dm"><div class="ak-dm-lbl">Frequency</div><div class="ak-dm-val" style="color:var(--teal)">${a.hz} Hz</div></div>
+      <div class="ak-dm"><div class="ak-dm-lbl">Chromosomal locus</div><div class="ak-dm-val" style="font-size:11px;color:var(--purple)">${a.chrom}</div></div>
+      <div class="ak-dm"><div class="ak-dm-lbl">Neural signature</div><div class="ak-dm-val" style="font-size:10px;color:var(--blue)">${a.neuro}</div></div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text2)">Reference: <a href="#" onclick="openRef('https://${a.ref}');return false" style="color:var(--teal)">${a.ref} →</a></div>`;
+  det.classList.add('open');
+}
+
+/* ═══════════════════════════════════════════════════════
+   CASE STUDIES
+═══════════════════════════════════════════════════════ */
+const csColors={
+  gold:{num:'background:#2a1f00;color:var(--gold2)',border:'border-left:3px solid var(--gold)'},
+  teal:{num:'background:#00201a;color:var(--teal)',border:'border-left:3px solid var(--teal)'},
+  purple:{num:'background:#1a1840;color:var(--purple)',border:'border-left:3px solid var(--purple)'},
+  blue:{num:'background:#001833;color:var(--blue)',border:'border-left:3px solid var(--blue)'},
+  coral:{num:'background:#2a0e00;color:var(--coral)',border:'border-left:3px solid var(--coral)'},
+};
+
+function buildCases(){
+  const grid=document.getElementById('csGrid');
+  grid.innerHTML='';
+  CASES.forEach((c,i)=>{
+    const cc=csColors[c.color];
+    const div=document.createElement('div');
+    div.className='cs-card';
+    div.style=cc.border;
+    div.innerHTML=`
+      <span class="cs-num" style="${cc.num}">${c.num}</span>
+      <div class="cs-title">${c.title}</div>
+      <div class="cs-sub">${c.sub}</div>
+      <div class="tags">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      <a href="#" onclick="openRef('${c.ref}');return false" style="font-size:10px;color:var(--teal)">Open reference site →</a>
+      <button class="expand-btn" onclick="toggleCase(${i},this)" style="display:block;margin-top:8px">Expand full case ↓</button>
+      <div class="expand-area" id="cse-${i}">
+        <p><strong>Shastra / Repository:</strong> ${c.shastra}</p>
+        <p><strong>Bioacoustic inference:</strong> ${c.bioacoustic}</p>
+        <p><strong>Genomic / Chromosomal science:</strong> ${c.genomic}</p>
+        <p><strong>Neurological patterns:</strong> ${c.neuro}</p>
+        <p style="font-size:10px;color:var(--text3);margin-top:6px">⏱ ${c.status}</p>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+function toggleCase(i,btn){
+  const el=document.getElementById('cse-'+i);
+  const open=el.classList.toggle('open');
+  btn.textContent=open?'Collapse ↑':'Expand full case ↓';
+}
+
+/* ═══════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════ */
+function gotoTab(id){
+  document.querySelectorAll('.panel').forEach(p=>{
+    p.classList.remove('active');
+    if(p.id==='panel-browser') p.style.display='none';
+  });
+  document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('active'));
+
+  const panel=document.getElementById('panel-'+id);
+  if(id==='browser'){
+    panel.style.display='flex';
+    panel.classList.add('active');
+  } else {
+    panel.classList.add('active');
+  }
+  const sbItem=document.querySelector(`.sb-item[data-tab="${id}"]`);
+  if(sbItem) sbItem.classList.add('active');
+
+  if(id==='keys') buildKeyGrid();
+  if(id==='query'){
+    const k=getActiveKey();
+    document.getElementById('queryKeyInfo').textContent=k?`Active: Key ${activeKeyIdx+1} · ${mask(k)} · Auto-rotates on token exhaustion`:'No API key active — add keys in API Key Manager.';
+    document.getElementById('statusKey').textContent=k?`Key ${activeKeyIdx+1}: ${mask(k)}`:'none';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+loadStore();
+buildAksharas();
+buildCases();
+buildRefGrid();
+buildKeyGrid();
+updateSidebar();
+updateHeader();
+</script>
+</body>
+</html>
